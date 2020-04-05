@@ -1,0 +1,5 @@
+{
+  "devDependencies": {
+    "@conduitry/eslint-config": "git+https://chor.date/eslint-config"
+  }
+}
