@@ -8,7 +8,12 @@
 // ==/UserScript==
 
 // remove guest warning modal
-document.querySelector('.guest-warning').remove();
+if (document.querySelector('.guest-warning')) {
+	document.querySelector('.guest-warning').remove();
+} else {
+	// either we're logged in or we're on the landing page and we have nothing to do
+	return;
+}
 
 // disable automatic blacklist
 localStorage.setItem('dab', '1');
