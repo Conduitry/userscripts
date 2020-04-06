@@ -19,7 +19,9 @@
 	// disable automatic blacklist
 	localStorage.setItem('dab', '1');
 
+	const url_search_params = new URLSearchParams(location.search);
 	let match;
+
 	if (match = location.pathname.match(/^\/posts\/(\d+)/)) {
 
 		// on page for a single post, fetch and display if blocked by global blacklist
@@ -44,23 +46,24 @@
 	} else if (/^\/posts\/?/.test(location.pathname)) {
 
 		// on search results pages, re-add posts blocked by global blacklist
-		const url_search_params = new URLSearchParams(location.search);
 		const { posts } = await make_request('/posts.json', { tags: url_search_params.get('tags'), page: url_search_params.get('page') });
-		const container = document.querySelector('#posts-container');
-		let found, next;
-		for (let i = posts.length - 1; i >= 0; i--) {
-			found = document.querySelector(`#post_${posts[i].id}`);
-			if (found) {
-				next = found;
-			} else {
-				const el = document.createElement('article');
-				el.setAttribute('class', 'post-preview captioned');
-				el.setAttribute('data-file-ext', posts[i].file.ext);
-				el.innerHTML = `<a href="/posts/${posts[i].id}${make_query({ q: url_search_params.get('tags') })}"><img src="${get_preview_url(posts[i])}"></a>`;
-				container.insertBefore(el, next);
-				next = el;
+		augment_results(posts, { q: url_search_params.get('tags') });
+
+	} else if (match = location.pathname.match(/^\/pools\/(\d+)/)) {
+
+		// on pool view pages, re-add posts blocked by global blacklist
+		const { post_ids } = await make_request(`/pools/${match[1]}.json`);
+		const all_posts = [];
+		for (let page = 1; ; page++) {
+			const { posts } = await make_request('/posts.json', { tags: `pool:${match[1]}`, page });
+			all_posts.push(...posts);
+			if (posts.length < 75) {
+				break;
 			}
 		}
+		const page = +url_search_params.get('page') || 1;
+		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_posts.find(({ id }) => id === post_id));
+		augment_results(posts, { pool_id: match[1] });
 
 	}
 
@@ -94,6 +97,25 @@ function make_request(path, params) {
 		xhr.open('GET', path + make_query(params), true);
 		xhr.send();
 	});
+}
+
+// augment results list with given posts
+function augment_results(posts, link_params) {
+	const container = document.querySelector('#posts-container');
+	let found, next;
+	for (let i = posts.length - 1; i >= 0; i--) {
+		found = document.querySelector(`#post_${posts[i].id}`);
+		if (found) {
+			next = found;
+		} else {
+			const el = document.createElement('article');
+			el.setAttribute('class', 'post-preview captioned');
+			el.setAttribute('data-file-ext', posts[i].file.ext);
+			el.innerHTML = `<a href="/posts/${posts[i].id}${make_query(link_params)}"><img src="${get_preview_url(posts[i])}"></a>`;
+			container.insertBefore(el, next);
+			next = el;
+		}
+	}
 }
 
 // from a post's image's MD5, construct the main part of its path
