@@ -108,10 +108,22 @@ function augment_results(posts, link_params) {
 		if (found) {
 			next = found;
 		} else {
+			const post = posts[i];
 			const el = document.createElement('article');
-			el.setAttribute('class', 'post-preview captioned');
-			el.setAttribute('data-file-ext', posts[i].file.ext);
-			el.innerHTML = `<a href="/posts/${posts[i].id}${make_query(link_params)}"><img src="${get_preview_url(posts[i])}"></a>`;
+			el.classList.add('post-preview');
+			el.classList.add('captioned');
+			el.classList.toggle('post-status-has-parent', post.relationships.parent_id);
+			el.classList.toggle('post-status-has-children', post.relationships.has_active_children);
+			el.classList.toggle('post-status-pending', post.flags.pending);
+			el.classList.toggle('post-status-flagged', post.flags.flagged);
+			el.classList.toggle('post-rating-safe', post.rating === 's');
+			el.classList.toggle('post-rating-questionable', post.rating === 'q');
+			el.classList.toggle('post-rating-explicit', post.rating === 'e');
+			if (post.tags.general.includes('animated')) {
+				el.setAttribute('data-tags', 'animated');
+			}
+			el.setAttribute('data-file-ext', post.file.ext);
+			el.innerHTML = `<a href="/posts/${post.id}${make_query(link_params)}"><img src="${get_preview_url(post)}"></a><div class="desc"><div class="post-score"><span class="post-score-score ${post.score.total > 0 ? 'score-positive' : post.score.total < 0 ? 'score-negative' : 'score-neutral'}">${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}</span><span class="post-score-faves">♥${post.fav_count}</span><span class="post-score-comments">C${post.comment_count}</span><span class="post-score-rating">${post.rating.toUpperCase()}</span><span class="post-score-extras">${post.relationships.parent_id ? 'P' : ''}${post.relationships.has_active_children ? 'C' : ''}${post.flags.pending ? 'U' : ''}${post.flags.flagged ? 'F' : ''}</span></div></div>`;
 			container.insertBefore(el, next);
 			next = el;
 		}
