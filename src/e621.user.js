@@ -24,10 +24,12 @@
 
 	if (match = location.pathname.match(/^\/posts\/(\d+)/)) {
 
-		// on page for a single post, fetch and display if blocked by global blacklist
+		// on pages for a single post ...
+		let post;
+		const get_post = async () => post || (post = (await make_request(`/posts/${match[1]}.json`)).post);
+		// ... fetch and display if blocked by global blacklist
 		if (document.querySelector('#image-container:not([data-file-url]):not([data-flags=deleted])')) {
-			const { post } = await make_request(`/posts/${match[1]}.json`);
-			if (post.file.ext === 'webm') {
+			if ((await get_post()).file.ext === 'webm') {
 				const el = document.createElement('video');
 				el.setAttribute('controls', '');
 				el.setAttribute('loop', '');
@@ -42,28 +44,31 @@
 			el.innerHTML = `<a class="button btn-warn" href="${get_file_url(post)}">Download</a>`;
 			document.querySelector('#image-extra-controls').insertBefore(el, document.querySelector('#image-resize-cycle'));
 		}
+		// ... display children
+		if (document.querySelector('#has-children-relationship-preview')) {
+			const all_posts = await find_all_posts(`parent:${match[1]}`);
+			augment_results(document.querySelector('#has-children-relationship-preview'), all_posts, { q: `parent:${match[1]}` });
+		}
+		// ... display parent
+		if (document.querySelector('#has-parent-relationship-preview') && !document.querySelector('#has-parent-relationship-preview article')) {
+			const all_posts = await find_all_posts(`id:${(await get_post()).relationships.parent_id}`);
+			augment_results(document.querySelector('#has-parent-relationship-preview'), all_posts, { q: `parent:${post.relationships.parent_id}` });
+		}
 
 	} else if (/^\/posts\/?/.test(location.pathname)) {
 
 		// on search results pages, re-add posts blocked by global blacklist
 		const { posts } = await make_request('/posts.json', { tags: url_search_params.get('tags'), page: url_search_params.get('page') });
-		augment_results(posts, { q: url_search_params.get('tags') });
+		augment_results(document.querySelector('#posts-container'), posts, { q: url_search_params.get('tags') });
 
 	} else if (match = location.pathname.match(/^\/pools\/(\d+)/)) {
 
 		// on pool view pages, re-add posts blocked by global blacklist
 		const { post_ids } = await make_request(`/pools/${match[1]}.json`);
-		const all_posts = [];
-		for (let page = 1; ; page++) {
-			const { posts } = await make_request('/posts.json', { tags: `pool:${match[1]}`, page });
-			all_posts.push(...posts);
-			if (posts.length < 75) {
-				break;
-			}
-		}
+		const all_posts = await find_all_posts(`pool:${match[1]}`);
 		const page = +url_search_params.get('page') || 1;
 		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_posts.find(({ id }) => id === post_id));
-		augment_results(posts, { pool_id: match[1] });
+		augment_results(document.querySelector('#posts-container'), posts, { pool_id: match[1] });
 
 	}
 
@@ -99,12 +104,23 @@ function make_request(path, params) {
 	});
 }
 
+// find all posts matching tags, iterating through pages
+async function find_all_posts(tags) {
+	const all_posts = [];
+	for (let page = 1; ; page++) {
+		const { posts } = await make_request('/posts.json', { tags, page });
+		all_posts.push(...posts);
+		if (posts.length < 75) {
+			return all_posts.reverse();
+		}
+	}
+}
+
 // augment results list with given posts
-function augment_results(posts, link_params) {
-	const container = document.querySelector('#posts-container');
+function augment_results(container, posts, link_params) {
 	let found, next;
 	for (let i = posts.length - 1; i >= 0; i--) {
-		found = document.querySelector(`#post_${posts[i].id}`);
+		found = container.querySelector(`#post_${posts[i].id}`);
 		if (found) {
 			next = found;
 		} else {
