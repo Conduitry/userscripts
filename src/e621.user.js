@@ -30,19 +30,11 @@
 		// ... fetch and display if blocked by global blacklist
 		if (document.querySelector('#image-container:not([data-file-url]):not([data-flags=deleted])')) {
 			if ((await get_post()).file.ext === 'webm') {
-				const el = document.createElement('video');
-				el.setAttribute('controls', '');
-				el.setAttribute('loop', '');
-				el.src = get_file_url(post);
-				document.querySelector('#image-container').appendChild(el);
+				document.querySelector('#image-container').appendChild(dom(['video', { controls: '', loop: '', src: get_file_url(post) }]));
 			} else if (post.file.ext !== 'swf') {
-				const el = document.createElement('img');
-				el.src = get_sample_url(post);
-				document.querySelector('#image-container').appendChild(el);
+				document.querySelector('#image-container').appendChild(dom(['img', { src: get_sample_url(post) }]));
 			}
-			const el = document.createElement('div');
-			el.innerHTML = `<a class="button btn-warn" href="${get_file_url(post)}">Download</a>`;
-			document.querySelector('#image-extra-controls').insertBefore(el, document.querySelector('#image-resize-cycle'));
+			document.querySelector('#image-extra-controls').insertBefore(dom(['div', {}, ['a', { class: 'button btn-warn', href: get_file_url(post) }, 'Download']]), document.querySelector('#image-resize-cycle'));
 		}
 		// ... display children
 		if (document.querySelector('#has-children-relationship-preview')) {
@@ -116,6 +108,23 @@ async function find_all_posts(tags) {
 	}
 }
 
+// recursively build a DOM tree
+function dom(data) {
+	if (typeof data === 'string') {
+		return document.createTextNode(data);
+	}
+	const el = document.createElement(data[0]);
+	for (const key in data[1]) {
+		if (data[1][key] != null) {
+			el.setAttribute(key, data[1][key]);
+		}
+	}
+	for (let i = 2; i < data.length; i++) {
+		el.appendChild(dom(data[i]));
+	}
+	return el;
+}
+
 // augment results list with given posts
 function augment_results(container, posts, link_params) {
 	let found, next;
@@ -125,21 +134,7 @@ function augment_results(container, posts, link_params) {
 			next = found;
 		} else {
 			const post = posts[i];
-			const el = document.createElement('article');
-			el.classList.add('post-preview');
-			el.classList.add('captioned');
-			el.classList.toggle('post-status-has-parent', post.relationships.parent_id);
-			el.classList.toggle('post-status-has-children', post.relationships.has_active_children);
-			el.classList.toggle('post-status-pending', post.flags.pending);
-			el.classList.toggle('post-status-flagged', post.flags.flagged);
-			el.classList.toggle('post-rating-safe', post.rating === 's');
-			el.classList.toggle('post-rating-questionable', post.rating === 'q');
-			el.classList.toggle('post-rating-explicit', post.rating === 'e');
-			if (post.tags.general.includes('animated')) {
-				el.setAttribute('data-tags', 'animated');
-			}
-			el.setAttribute('data-file-ext', post.file.ext);
-			el.innerHTML = `<a href="/posts/${post.id}${make_query(link_params)}"><img src="${get_preview_url(post)}"></a><div class="desc"><div class="post-score"><span class="post-score-score ${post.score.total > 0 ? 'score-positive' : post.score.total < 0 ? 'score-negative' : 'score-neutral'}">${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}</span><span class="post-score-faves">♥${post.fav_count}</span><span class="post-score-comments">C${post.comment_count}</span><span class="post-score-rating">${post.rating.toUpperCase()}</span><span class="post-score-extras">${post.relationships.parent_id ? 'P' : ''}${post.relationships.has_active_children ? 'C' : ''}${post.flags.pending ? 'U' : ''}${post.flags.flagged ? 'F' : ''}</span></div></div>`;
+			const el = dom(['article', { class: `post-preview captioned ${post.relationships.parent_id ? 'post-status-has-parent' : ''} ${post.relationships.has_active_children ? 'post-status-has-children' : ''} ${post.flags.pending ? 'post-status-pending' : ''} ${post.flags.flagged ? 'post-status-flagged' : ''} ${post.rating === 's' ? 'post-rating-safe' : post.rating === 'q' ? 'post-rating-questionable' : post.rating === 'e' ? 'post-rating-explicit' : ''}`, 'data-tags': post.tags.general.includes('animated') ? 'animated' : null, 'data-file-ext': post.file.ext }, ['a', { href: `/posts/${post.id}${make_query(link_params)}` }, ['img', { src: get_preview_url(post) }]], ['div', { class: 'desc' }, ['div', { class: 'post-score' }, ['span', { class: `post-score-score ${post.score.total > 0 ? 'score-positive' : post.score.total < 0 ? 'score-negative' : 'score-neutral'}` }, `${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}`], ['span', { class: 'post-score-faves' }, `♥${post.fav_count}`], ['span', { class: 'post-score-comments' }, `C${post.comment_count}`], ['span', { class: 'post-score-rating' }, post.rating.toUpperCase()], ['span', { class: 'post-score-extras' }, `${post.relationships.parent_id ? 'P' : ''}${post.relationships.has_active_children ? 'C' : ''}${post.flags.pending ? 'U' : ''}${post.flags.flagged ? 'F' : ''}`]]]]);
 			container.insertBefore(el, next);
 			next = el;
 		}
