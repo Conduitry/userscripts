@@ -19,12 +19,14 @@ const make_query = (params) => {
 };
 
 // make request and return parsed JSON
-const make_request = (path, params) => new Promise(res => {
+let last_request_time = 0;
+const make_request = (path, params) => new Promise(res => setTimeout(() => {
 	const xhr = new XMLHttpRequest();
 	xhr.onreadystatechange = () => xhr.readyState === 4 && xhr.status === 200 && res(JSON.parse(xhr.responseText));
 	xhr.open('GET', path + make_query(params), true);
 	xhr.send();
-});
+	last_request_time = Date.now();
+}, last_request_time + 500 - Date.now()));
 
 // find all posts matching tags, iterating through pages
 const find_all_posts = async tags => {
