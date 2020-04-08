@@ -147,11 +147,8 @@ const augment_results = (container, posts, link_params) => {
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
-	setInterval(() => {
-		for (const img of document.querySelectorAll('.post-thumbnail[data-status=active] img[src^="/images/"]')) {
-			img.removeAttribute('src');
-			make_request(`/posts/${img.closest('.post-thumbnail').dataset.id}.json`).then(({ post }) => img.src = get_preview_url(post));
-		}
-	}, 1000);
+	for (const el of document.querySelectorAll('.post-thumbnail[data-status=active] img[src^="/images/"]')) {
+		el.src = get_preview_url((await make_request(`/posts/${el.closest('.post-thumbnail').dataset.id}.json`)).post);
+	}
 
 })();
