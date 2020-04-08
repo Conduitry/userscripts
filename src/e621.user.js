@@ -50,8 +50,10 @@
 	} else if (/^\/posts\/?/.test(location.pathname)) {
 
 		// on search results pages, re-add posts blocked by global blacklist
-		const { posts } = await make_request('/posts.json', { tags: url_search_params.get('tags'), page: url_search_params.get('page') });
-		augment_results(document.querySelector('#posts-container'), posts, { q: url_search_params.get('tags') });
+		if (document.querySelector('.hidden-posts-notice')) {
+			const { posts } = await make_request('/posts.json', { tags: url_search_params.get('tags'), page: url_search_params.get('page') });
+			augment_results(document.querySelector('#posts-container'), posts, { q: url_search_params.get('tags') });
+		}
 
 	} else if (match = location.pathname.match(/^\/pools\/(\d+)/)) {
 
