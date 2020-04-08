@@ -38,7 +38,7 @@
 		}
 		// ... display children
 		if (document.querySelector('#has-children-relationship-preview')) {
-			const all_posts = await find_all_posts(`parent:${match[1]}`);
+			const all_posts = await find_all_posts(`parent:${match[1]} order:id`);
 			augment_results(document.querySelector('#has-children-relationship-preview'), all_posts, { q: `parent:${match[1]}` });
 		}
 		// ... display parent
@@ -103,7 +103,7 @@ async function find_all_posts(tags) {
 		const { posts } = await make_request('/posts.json', { limit: 320, tags, page });
 		all_posts.push(...posts);
 		if (posts.length < 320) {
-			return all_posts.reverse();
+			return all_posts;
 		}
 		page = `b${posts[319].id}`;
 	}
