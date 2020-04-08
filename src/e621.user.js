@@ -99,12 +99,13 @@ function make_request(path, params) {
 // find all posts matching tags, iterating through pages
 async function find_all_posts(tags) {
 	const all_posts = [];
-	for (let page = 1; ; page++) {
-		const { posts } = await make_request('/posts.json', { tags, page });
+	for (let page = null; ;) {
+		const { posts } = await make_request('/posts.json', { limit: 320, tags, page });
 		all_posts.push(...posts);
-		if (posts.length < 75) {
+		if (posts.length < 320) {
 			return all_posts.reverse();
 		}
+		page = `b${posts[319].id}`;
 	}
 }
 
