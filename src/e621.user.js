@@ -6,6 +6,84 @@
 // @icon https://e621.net/favicon.ico
 // ==/UserScript==
 
+// wrapper around URLSearchParams to simplify creating search queries
+const make_query = (params) => {
+	const filtered = {};
+	for (const key in params) {
+		if (params[key] != null) {
+			filtered[key] = params[key];
+		}
+	}
+	const str = String(new URLSearchParams(filtered));
+	return str && `?${str}`;
+};
+
+// make request and return parsed JSON
+const make_request = (path, params) => new Promise(res => {
+	const xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = () => xhr.readyState === 4 && xhr.status === 200 && res(JSON.parse(xhr.responseText));
+	xhr.open('GET', path + make_query(params), true);
+	xhr.send();
+});
+
+// find all posts matching tags, iterating through pages
+const find_all_posts = async tags => {
+	const all_posts = [];
+	for (let page = null; ;) {
+		const { posts } = await make_request('/posts.json', { limit: 320, tags, page });
+		all_posts.push(...posts);
+		if (posts.length < 320) {
+			return all_posts;
+		}
+		page = `b${posts[319].id}`;
+	}
+};
+
+// from a post's image's MD5, construct the main part of its path
+const get_path = md5 => `${md5.slice(0, 2)}/${md5.slice(2, 4)}/${md5}`;
+
+// get the url of the full-sized version of an image
+const get_file_url = ({ file }) => `https://static1.e621.net/data/${get_path(file.md5)}.${file.ext}`;
+
+// get the url of the sample version of an image
+const get_sample_url = post => post.sample.has ? `https://static1.e621.net/data/sample/${get_path(post.file.md5)}.jpg` : get_file_url(post);
+
+// get the url of the preview version of an image
+const get_preview_url = ({ file }) => file.ext === 'swf' ? 'https://static1.e621.net/images/download-preview.png' : `https://static1.e621.net/data/preview/${get_path(file.md5)}.jpg`;
+
+// recursively build a DOM tree
+const dom = data => {
+	if (typeof data === 'string') {
+		return document.createTextNode(data);
+	}
+	const el = document.createElement(data[0]);
+	for (const key in data[1]) {
+		if (data[1][key] != null) {
+			el.setAttribute(key, data[1][key]);
+		}
+	}
+	for (let i = 2; i < data.length; i++) {
+		el.appendChild(dom(data[i]));
+	}
+	return el;
+};
+
+// augment results list with given posts
+const augment_results = (container, posts, link_params) => {
+	let found, next;
+	for (let i = posts.length - 1; i >= 0; i--) {
+		found = container.querySelector(`#post_${posts[i].id}`);
+		if (found) {
+			next = found;
+		} else {
+			const post = posts[i];
+			const el = dom(['article', { class: `post-preview captioned ${post.relationships.parent_id ? 'post-status-has-parent' : ''} ${post.relationships.has_active_children ? 'post-status-has-children' : ''} ${post.flags.pending ? 'post-status-pending' : ''} ${post.flags.flagged ? 'post-status-flagged' : ''} ${post.rating === 's' ? 'post-rating-safe' : post.rating === 'q' ? 'post-rating-questionable' : post.rating === 'e' ? 'post-rating-explicit' : ''}`, 'data-tags': post.tags.general.includes('animated') ? 'animated' : null, 'data-file-ext': post.file.ext }, ['a', { href: `/posts/${post.id}${make_query(link_params)}` }, ['img', { src: get_preview_url(post), title: `Rating: ${post.rating}\nID: ${post.id}\nStatus: ${post.flags.deleted ? 'deleted' : post.flags.flagged ? 'flagged' : post.flags.pending ? 'pending' : 'active'}\nDate: ${post.created_at}\n\n${[...new Set(Object.values(post.tags).flat())].sort().join(' ')}` }]], ['div', { class: 'desc' }, ['div', { class: 'post-score' }, ['span', { class: `post-score-score ${post.score.total > 0 ? 'score-positive' : post.score.total < 0 ? 'score-negative' : 'score-neutral'}` }, `${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}`], ['span', { class: 'post-score-faves' }, `♥${post.fav_count}`], ['span', { class: 'post-score-comments' }, `C${post.comment_count}`], ['span', { class: 'post-score-rating' }, post.rating.toUpperCase()], ['span', { class: 'post-score-extras' }, `${post.relationships.parent_id ? 'P' : ''}${post.relationships.has_active_children ? 'C' : ''}${post.flags.pending ? 'U' : ''}${post.flags.flagged ? 'F' : ''}`]]]]);
+			container.insertBefore(el, next);
+			next = el;
+		}
+	}
+};
+
 (async () => {
 
 	if (!document.querySelector('.guest-warning')) {
@@ -75,91 +153,3 @@
 	}, 1000);
 
 })();
-
-// wrapper around URLSearchParams to simplify creating search queries
-function make_query(params) {
-	const filtered = {};
-	for (const key in params) {
-		if (params[key] != null) {
-			filtered[key] = params[key];
-		}
-	}
-	const str = String(new URLSearchParams(filtered));
-	return str && `?${str}`;
-}
-
-// make request and return parsed JSON
-function make_request(path, params) {
-	return new Promise(res => {
-		const xhr = new XMLHttpRequest();
-		xhr.onreadystatechange = () => xhr.readyState === 4 && xhr.status === 200 && res(JSON.parse(xhr.responseText));
-		xhr.open('GET', path + make_query(params), true);
-		xhr.send();
-	});
-}
-
-// find all posts matching tags, iterating through pages
-async function find_all_posts(tags) {
-	const all_posts = [];
-	for (let page = null; ;) {
-		const { posts } = await make_request('/posts.json', { limit: 320, tags, page });
-		all_posts.push(...posts);
-		if (posts.length < 320) {
-			return all_posts;
-		}
-		page = `b${posts[319].id}`;
-	}
-}
-
-// recursively build a DOM tree
-function dom(data) {
-	if (typeof data === 'string') {
-		return document.createTextNode(data);
-	}
-	const el = document.createElement(data[0]);
-	for (const key in data[1]) {
-		if (data[1][key] != null) {
-			el.setAttribute(key, data[1][key]);
-		}
-	}
-	for (let i = 2; i < data.length; i++) {
-		el.appendChild(dom(data[i]));
-	}
-	return el;
-}
-
-// augment results list with given posts
-function augment_results(container, posts, link_params) {
-	let found, next;
-	for (let i = posts.length - 1; i >= 0; i--) {
-		found = container.querySelector(`#post_${posts[i].id}`);
-		if (found) {
-			next = found;
-		} else {
-			const post = posts[i];
-			const el = dom(['article', { class: `post-preview captioned ${post.relationships.parent_id ? 'post-status-has-parent' : ''} ${post.relationships.has_active_children ? 'post-status-has-children' : ''} ${post.flags.pending ? 'post-status-pending' : ''} ${post.flags.flagged ? 'post-status-flagged' : ''} ${post.rating === 's' ? 'post-rating-safe' : post.rating === 'q' ? 'post-rating-questionable' : post.rating === 'e' ? 'post-rating-explicit' : ''}`, 'data-tags': post.tags.general.includes('animated') ? 'animated' : null, 'data-file-ext': post.file.ext }, ['a', { href: `/posts/${post.id}${make_query(link_params)}` }, ['img', { src: get_preview_url(post), title: `Rating: ${post.rating}\nID: ${post.id}\nStatus: ${post.flags.deleted ? 'deleted' : post.flags.flagged ? 'flagged' : post.flags.pending ? 'pending' : 'active'}\nDate: ${post.created_at}\n\n${[...new Set(Object.values(post.tags).flat())].sort().join(' ')}` }]], ['div', { class: 'desc' }, ['div', { class: 'post-score' }, ['span', { class: `post-score-score ${post.score.total > 0 ? 'score-positive' : post.score.total < 0 ? 'score-negative' : 'score-neutral'}` }, `${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}`], ['span', { class: 'post-score-faves' }, `♥${post.fav_count}`], ['span', { class: 'post-score-comments' }, `C${post.comment_count}`], ['span', { class: 'post-score-rating' }, post.rating.toUpperCase()], ['span', { class: 'post-score-extras' }, `${post.relationships.parent_id ? 'P' : ''}${post.relationships.has_active_children ? 'C' : ''}${post.flags.pending ? 'U' : ''}${post.flags.flagged ? 'F' : ''}`]]]]);
-			container.insertBefore(el, next);
-			next = el;
-		}
-	}
-}
-
-// from a post's image's MD5, construct the main part of its path
-function get_path(md5) {
-	return `${md5.slice(0, 2)}/${md5.slice(2, 4)}/${md5}`;
-}
-
-// get the url of the full-sized version of an image
-function get_file_url({ file }) {
-	return `https://static1.e621.net/data/${get_path(file.md5)}.${file.ext}`;
-}
-
-// get the url of the sample version of an image
-function get_sample_url(post) {
-	return post.sample.has ? `https://static1.e621.net/data/sample/${get_path(post.file.md5)}.jpg` : get_file_url(post);
-}
-
-// get the url of the preview version of an image
-function get_preview_url({ file }) {
-	return file.ext === 'swf' ? 'https://static1.e621.net/images/download-preview.png' : `https://static1.e621.net/data/preview/${get_path(file.md5)}.jpg`;
-}
