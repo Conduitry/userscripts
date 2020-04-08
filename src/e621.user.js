@@ -57,9 +57,9 @@
 
 		// on pool view pages, re-add posts blocked by global blacklist
 		const { post_ids } = await make_request(`/pools/${match[1]}.json`);
-		const all_posts = await find_all_posts(`pool:${match[1]}`);
+		const all_blocked_posts = await find_all_posts(`pool:${match[1]} young -rating:s`);
 		const page = +url_search_params.get('page') || 1;
-		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_posts.find(({ id }) => id === post_id));
+		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_blocked_posts.find(({ id }) => id === post_id) || { id: post_id });
 		augment_results(document.querySelector('#posts-container'), posts, { pool_id: match[1] });
 
 	}
