@@ -150,6 +150,9 @@ const augment_results = (container, posts, link_params) => {
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
+	while (document.querySelector('.post-thumb.placeholder')) {
+		await new Promise(res => setTimeout(res, 100));
+	}
 	for (const el of document.querySelectorAll('.post-thumbnail[data-status=active] img[src^="/images/"]')) {
 		el.src = get_preview_url((await make_request(`/posts/${el.closest('.post-thumbnail').dataset.id}.json`)).post);
 	}
