@@ -28,7 +28,7 @@ const make_request = (path, params) => new Promise(res => setTimeout(() => {
 	last_request_time = Date.now();
 }, last_request_time + 500 - Date.now()));
 
-// find all posts matching tags, iterating through pages
+// find all posts matching tags, iterating through pages (only works with the default ordering of decreasing ids)
 const find_all_posts = async tags => {
 	const all_posts = [];
 	for (let page = null; ;) {
@@ -121,7 +121,7 @@ const augment_results = (container, posts, link_params) => {
 		}
 		// ... display children
 		if (document.querySelector('#has-children-relationship-preview')) {
-			const all_posts = await find_all_posts(`parent:${match[1]} order:id`);
+			const all_posts = (await find_all_posts(`parent:${match[1]}`)).reverse();
 			augment_results(document.querySelector('#has-children-relationship-preview'), all_posts, { q: `parent:${match[1]}` });
 		}
 		// ... display parent
