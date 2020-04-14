@@ -157,4 +157,10 @@ const augment_results = (container, posts, link_params) => {
 		el.src = get_preview_url((await make_request(`/posts/${el.closest('[data-id]').dataset.id}.json`)).post);
 	}
 
+	// fetch more missing previews
+	for (const el of document.querySelectorAll('[data-id]:not([data-flags=deleted]):not([data-md5]) .preview')) {
+		const id = el.closest('[data-id]').dataset.id;
+		el.appendChild(dom(['a', { href: `/posts/${id}` }, ['img', { src: get_preview_url((await make_request(`/posts/${id}.json`)).post) }]]));
+	}
+
 })();
