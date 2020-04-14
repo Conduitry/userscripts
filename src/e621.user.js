@@ -153,8 +153,8 @@ const augment_results = (container, posts, link_params) => {
 	while (document.querySelector('.post-thumb.placeholder')) {
 		await new Promise(res => setTimeout(res, 100));
 	}
-	for (const el of document.querySelectorAll('.post-thumbnail[data-status=active] img[src^="/images/"]')) {
-		el.src = get_preview_url((await make_request(`/posts/${el.closest('.post-thumbnail').dataset.id}.json`)).post);
+	for (const el of document.querySelectorAll('.post-thumbnail[data-id]:not([data-flags=deleted]):not([data-md5]) img')) {
+		el.src = get_preview_url((await make_request(`/posts/${el.closest('[data-id]').dataset.id}.json`)).post);
 	}
 
 })();
