@@ -51,7 +51,7 @@ const get_file_url = ({ file }) => `https://static1.e621.net/data/${get_path(fil
 const get_sample_url = post => post.sample.has ? `https://static1.e621.net/data/sample/${get_path(post.file.md5)}.jpg` : get_file_url(post);
 
 // get the url of the preview version of an image
-const get_preview_url = ({ file }) => file.ext === 'swf' ? 'https://static1.e621.net/images/download-preview.png' : `https://static1.e621.net/data/preview/${get_path(file.md5)}.jpg`;
+const get_preview_url = post => post.flags.deleted ? 'https://e621.net/images/deleted-preview.png' : post.file.ext === 'swf' ? 'https://static1.e621.net/images/download-preview.png' : `https://static1.e621.net/data/preview/${get_path(post.file.md5)}.jpg`;
 
 // recursively build a DOM tree
 const dom = data => {
