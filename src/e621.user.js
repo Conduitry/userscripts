@@ -26,7 +26,7 @@ const make_request = (path, params) => new Promise(res => setTimeout(() => {
 	xhr.open('GET', path + make_query(params), true);
 	xhr.send();
 	last_request_time = Date.now();
-}, last_request_time + 500 - Date.now()));
+}, Math.max(last_request_time + 500 - Date.now(), 0)));
 
 // find all posts matching tags, iterating through pages (only works with the default ordering of decreasing ids)
 const find_all_posts = async tags => {
