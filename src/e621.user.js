@@ -4,6 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
+// @version 0
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
