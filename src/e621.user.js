@@ -148,6 +148,12 @@ const augment_results = (container, posts, link_params) => {
 		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_blocked_posts.find(({ id }) => id === post_id) || { id: post_id });
 		augment_results(document.querySelector('#posts-container'), posts, { pool_id: match[1] });
 
+	} else if (/^\/explore\/posts\/popular\/?/.test(location.pathname)) {
+
+		// on popular posts pages, re-add posts blocked by global blacklist
+		const { posts } = await make_request('/explore/posts/popular.json', { date: url_search_params.get('date'), scale: url_search_params.get('scale') });
+		augment_results(document.querySelector('#posts-container'), posts);
+
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
