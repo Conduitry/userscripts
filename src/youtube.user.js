@@ -7,9 +7,14 @@
 // @version 0
 // ==/UserScript==
 
-setTimeout(() => {
-	const el = document.querySelector('.ytd-compact-autoplay-renderer[role=button][aria-pressed=true]');
-	if (el) {
-		el.dispatchEvent(new MouseEvent('click'));
+(async () => {
+	let el;
+	if (location.pathname === '/watch') {
+		while (!(el = document.querySelector('.ytd-compact-autoplay-renderer[role=button]'))) {
+			await new Promise(res => setTimeout(res, 100));
+		}
+		if (el.getAttribute('aria-pressed') === 'true') {
+			el.dispatchEvent(new MouseEvent('click'));
+		}
 	}
-}, 5000);
+})();
