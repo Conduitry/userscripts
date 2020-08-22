@@ -154,6 +154,15 @@ const augment_results = (container, posts, link_params) => {
 		const { posts } = await make_request('/explore/posts/popular.json', { date: url_search_params.get('date'), scale: url_search_params.get('scale') });
 		augment_results(document.querySelector('#posts-container'), posts);
 
+	} else if (/^\/wiki_pages\/\d+/.test(location.pathname)) {
+
+		// on wiki pages, re-add most recent 4 posts blocked by global blacklist
+		if (document.querySelectorAll('#wiki-page-posts article').length < 4) {
+			const tag = decodeURIComponent(document.querySelector('.tag-type-0').getAttribute('href').slice(12));
+			const { posts } = await make_request('/posts.json', { tags: tag, limit: 4 });
+			augment_results(document.querySelector('#wiki-page-posts'), posts, { q: tag });
+		}
+
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
