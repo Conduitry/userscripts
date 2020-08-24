@@ -4,7 +4,7 @@
 // @description A script to unset autoplay and display hidden video tags.
 // @match https://www.youtube.com/*
 // @icon https://www.youtube.com/favicon.ico
-// @version 0
+// @version 2020.08.24.031122
 // ==/UserScript==
 
 (async () => {

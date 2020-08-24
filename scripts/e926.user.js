@@ -4,7 +4,7 @@
 // @description A script to redirect you from e926.net to e621.net.
 // @match https://e926.net/*
 // @icon https://e926.net/favicon.ico
-// @version 0
+// @version 2020.08.24.031122
 // ==/UserScript==
 
 // redirect to same URL on e621.net
