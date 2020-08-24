@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2020.08.24.031122
+// @version 2020.08.24.161748
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -161,6 +161,15 @@ const augment_results = (container, posts, link_params) => {
 			const tag = decodeURIComponent(document.querySelector('.tag-type-0').getAttribute('href').slice(12));
 			const { posts } = await make_request('/posts.json', { tags: tag, limit: 4 });
 			augment_results(document.querySelector('#wiki-page-posts'), posts, { q: tag });
+		}
+
+	} else if (/^\/users\/\d+/.test(location.pathname)) {
+
+		// on user pages, re-add most recent 6 posts blocked by global blacklist
+		if (document.querySelectorAll('.user-uploads .vertical-section article').length < 6) {
+			const tag = decodeURIComponent(document.querySelector('.user-uploads a').getAttribute('href').slice(12));
+			const { posts } = await make_request('/posts.json', { tags: tag, limit: 6 });
+			augment_results(document.querySelector('.user-uploads .vertical-section'), posts, { q: tag });
 		}
 
 	}
