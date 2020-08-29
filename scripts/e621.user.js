@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2020.08.28.125242
+// @version 2020.08.29.143543
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -109,8 +109,9 @@ const augment_results = (container, posts, link_params) => {
 	if (match = location.pathname.match(/^\/posts\/(\d+)/)) {
 
 		// on pages for a single post ...
+		const [, post_id] = match;
 		let post;
-		const get_post = async () => post || (post = (await make_request(`/posts/${match[1]}.json`)).post);
+		const get_post = async () => post || (post = (await make_request(`/posts/${post_id}.json`)).post);
 		// ... fetch and display if blocked by global blacklist
 		if (document.querySelector('#image-container:not([data-file-url]):not([data-flags=deleted])')) {
 			if ((await get_post()).file.ext === 'webm') {
@@ -122,8 +123,8 @@ const augment_results = (container, posts, link_params) => {
 		}
 		// ... display children
 		if (document.querySelector('#has-children-relationship-preview')) {
-			const all_posts = (await find_all_posts(`parent:${match[1]}`)).reverse();
-			augment_results(document.querySelector('#has-children-relationship-preview'), all_posts, { q: `parent:${match[1]}` });
+			const all_posts = (await find_all_posts(`parent:${post_id}`)).reverse();
+			augment_results(document.querySelector('#has-children-relationship-preview'), all_posts, { q: `parent:${post_id}` });
 		}
 		// ... display parent
 		if (document.querySelector('#has-parent-relationship-preview') && !document.querySelector('#has-parent-relationship-preview article')) {
@@ -142,11 +143,12 @@ const augment_results = (container, posts, link_params) => {
 	} else if (match = location.pathname.match(/^\/pools\/(\d+)/)) {
 
 		// on pool view pages, re-add posts blocked by global blacklist
-		const { post_ids } = await make_request(`/pools/${match[1]}.json`);
-		const all_blocked_posts = await find_all_posts(`pool:${match[1]} young -rating:s`);
+		const [, pool_id] = match;
+		const { post_ids } = await make_request(`/pools/${pool_id}.json`);
+		const all_blocked_posts = await find_all_posts(`pool:${pool_id} young -rating:s`);
 		const page = +url_search_params.get('page') || 1;
 		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_blocked_posts.find(({ id }) => id === post_id) || { id: post_id });
-		augment_results(document.querySelector('#posts-container'), posts, { pool_id: match[1] });
+		augment_results(document.querySelector('#posts-container'), posts, { pool_id });
 
 	} else if (/^\/explore\/posts\/popular\/?/.test(location.pathname)) {
 
@@ -158,7 +160,7 @@ const augment_results = (container, posts, link_params) => {
 
 		// on wiki pages, re-add most recent 4 posts blocked by global blacklist
 		if (document.querySelectorAll('#wiki-page-posts article').length < 4) {
-			const tag = decodeURIComponent(document.querySelector('.tag-type-0').getAttribute('href').slice(12));
+			const tag = new URLSearchParams(new URL(document.querySelector('.tag-type-0')).search).get('tags');
 			const { posts } = await make_request('/posts.json', { tags: tag, limit: 4 });
 			augment_results(document.querySelector('#wiki-page-posts'), posts, { q: tag });
 		}
@@ -167,7 +169,7 @@ const augment_results = (container, posts, link_params) => {
 
 		// on user pages, re-add most recent 6 posts blocked by global blacklist
 		if (document.querySelectorAll('.user-uploads .vertical-section article').length < 6) {
-			const tag = decodeURIComponent(document.querySelector('.user-uploads a').getAttribute('href').slice(12));
+			const tag = new URLSearchParams(new URL(document.querySelector('.user-uploads a')).search).get('tags');
 			const { posts } = await make_request('/posts.json', { tags: tag, limit: 6 });
 			augment_results(document.querySelector('.user-uploads .vertical-section'), posts, { q: tag });
 		}
