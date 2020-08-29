@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2020.08.29.143543
+// @version 2020.08.29.145752
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -156,11 +156,11 @@ const augment_results = (container, posts, link_params) => {
 		const { posts } = await make_request('/explore/posts/popular.json', { date: url_search_params.get('date'), scale: url_search_params.get('scale') });
 		augment_results(document.querySelector('#posts-container'), posts);
 
-	} else if (/^\/wiki_pages\/\d+/.test(location.pathname)) {
+	} else if (/^\/wiki_pages\/(\d+|show_or_new)/.test(location.pathname)) {
 
 		// on wiki pages, re-add most recent 4 posts blocked by global blacklist
 		if (document.querySelectorAll('#wiki-page-posts article').length < 4) {
-			const tag = new URLSearchParams(new URL(document.querySelector('.tag-type-0')).search).get('tags');
+			const tag = new URLSearchParams(new URL(document.querySelector('#wiki-page-posts a')).search).get('tags');
 			const { posts } = await make_request('/posts.json', { tags: tag, limit: 4 });
 			augment_results(document.querySelector('#wiki-page-posts'), posts, { q: tag });
 		}
@@ -177,7 +177,7 @@ const augment_results = (container, posts, link_params) => {
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
-	while (document.querySelector('.post-thumb.placeholder:not([data-id="0"])')) {
+	while (document.querySelector('.post-thumb.placeholder:not([data-id="0"]), .dtext-post-id-link')) {
 		await new Promise(res => setTimeout(res, 100));
 	}
 	for (const el of document.querySelectorAll('.post-thumbnail[data-id]:not([data-flags=deleted]):not([data-md5]) img')) {
