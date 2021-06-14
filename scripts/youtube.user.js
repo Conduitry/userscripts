@@ -4,19 +4,35 @@
 // @description A script to unset autoplay and display hidden video tags.
 // @match https://www.youtube.com/*
 // @icon https://www.youtube.com/favicon.ico
-// @version 2020.08.24.031122
+// @version 2021.06.14.211919
 // ==/UserScript==
 
-(async () => {
-	let el;
-	if (location.pathname === '/watch') {
-		while (!(el = document.querySelector('.ytd-compact-autoplay-renderer[role=button]'))) {
-			await new Promise(res => setTimeout(res, 100));
+const disable_autoplay = async () => {
+	for (;;) {
+		const el = document.querySelector('.ytp-autonav-toggle-button[aria-checked]');
+		if (el) {
+			if (el.getAttribute('aria-checked') === 'true') {
+				el.click();
+			} else {
+				return;
+			}
 		}
-		if (el.getAttribute('aria-pressed') === 'true') {
-			el.dispatchEvent(new MouseEvent('click'));
-		}
-		const tags = [...document.querySelectorAll('meta[property="og:video:tag"]')].map(el => el.content).join(', ');
-		document.querySelectorAll('h1.title').forEach(el => el.title = tags);
+		await new Promise(res => setTimeout(res, 1000));
 	}
-})();
+};
+
+const set_tags = async () => {
+	for (;;) {
+		const el = document.querySelector('h1.title.ytd-video-primary-info-renderer');
+		if (el) {
+			el.title = document.querySelector('meta[name=keywords]').content;
+			return;
+		}
+		await new Promise(res => setTimeout(res, 1000));
+	}
+};
+
+if (location.pathname === '/watch') {
+	disable_autoplay();
+	set_tags();
+}
