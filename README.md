@@ -1,6 +1,6 @@
 # Userscripts
 
-[e621 thing](scripts/e621.user.js) | [e926 thing](scripts/e926.user.js) | [TV Tropes thing](scripts/tvtropes.user.js) | [YouTube thing](scripts/youtube.user.js)
+Install from files in [`scripts`](scripts) directory.
 
 ## Development
 
@@ -10,7 +10,7 @@ This includes a pre-commit Git hook to automatically update the `@version` tags 
 git config core.hookspath .githooks
 ```
 
-This hook script will prevent the commit if there are any files in the `scripts` directory with both staged and unstaged changes.
+This hook script will prevent the commit if there are any files in the [`scripts`](scripts) directory with both staged and unstaged changes.
 
 ## License
 
