@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2020.08.29.145752
+// @version 2022.04.18.224937
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -106,10 +106,10 @@ const augment_results = (container, posts, link_params) => {
 	const url_search_params = new URLSearchParams(location.search);
 	let match;
 
-	if (match = location.pathname.match(/^\/posts\/(\d+)/)) {
+	if (match = location.pathname.match(/^\/posts\/(?<post_id>\d+)/)) {
 
 		// on pages for a single post ...
-		const [, post_id] = match;
+		const { post_id } = match.groups;
 		let post;
 		const get_post = async () => post || (post = (await make_request(`/posts/${post_id}.json`)).post);
 		// ... fetch and display if blocked by global blacklist
@@ -140,10 +140,10 @@ const augment_results = (container, posts, link_params) => {
 			augment_results(document.querySelector('#posts-container'), posts, { q: url_search_params.get('tags') });
 		}
 
-	} else if (match = location.pathname.match(/^\/pools\/(\d+)/)) {
+	} else if (match = location.pathname.match(/^\/pools\/(?<pool_id>\d+)/)) {
 
 		// on pool view pages, re-add posts blocked by global blacklist
-		const [, pool_id] = match;
+		const { pool_id } = match.groups;
 		const { post_ids } = await make_request(`/pools/${pool_id}.json`);
 		const all_blocked_posts = await find_all_posts(`pool:${pool_id} young -rating:s`);
 		const page = +url_search_params.get('page') || 1;
