@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2022.04.18.224937
+// @version 2022.04.18.225111
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -103,7 +103,7 @@ const augment_results = (container, posts, link_params) => {
 	// disable automatic blacklist
 	localStorage.setItem('dab', '1');
 
-	const url_search_params = new URLSearchParams(location.search);
+	const query = Object.fromEntries(new URLSearchParams(location.search));
 	let match;
 
 	if (match = location.pathname.match(/^\/posts\/(?<post_id>\d+)/)) {
@@ -136,8 +136,8 @@ const augment_results = (container, posts, link_params) => {
 
 		// on search results pages, re-add posts blocked by global blacklist
 		if (document.querySelector('.hidden-posts-notice')) {
-			const { posts } = await make_request('/posts.json', { tags: url_search_params.get('tags'), page: url_search_params.get('page') });
-			augment_results(document.querySelector('#posts-container'), posts, { q: url_search_params.get('tags') });
+			const { posts } = await make_request('/posts.json', { tags: query.tags, page: query.page });
+			augment_results(document.querySelector('#posts-container'), posts, { q: query.tags });
 		}
 
 	} else if (match = location.pathname.match(/^\/pools\/(?<pool_id>\d+)/)) {
@@ -146,14 +146,14 @@ const augment_results = (container, posts, link_params) => {
 		const { pool_id } = match.groups;
 		const { post_ids } = await make_request(`/pools/${pool_id}.json`);
 		const all_blocked_posts = await find_all_posts(`pool:${pool_id} young -rating:s`);
-		const page = +url_search_params.get('page') || 1;
+		const page = +query.page || 1;
 		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_blocked_posts.find(({ id }) => id === post_id) || { id: post_id });
 		augment_results(document.querySelector('#posts-container'), posts, { pool_id });
 
 	} else if (/^\/explore\/posts\/popular\/?/.test(location.pathname)) {
 
 		// on popular posts pages, re-add posts blocked by global blacklist
-		const { posts } = await make_request('/explore/posts/popular.json', { date: url_search_params.get('date'), scale: url_search_params.get('scale') });
+		const { posts } = await make_request('/explore/posts/popular.json', { date: query.date, scale: query.scale });
 		augment_results(document.querySelector('#posts-container'), posts);
 
 	} else if (/^\/wiki_pages\/(\d+|show_or_new)/.test(location.pathname)) {
