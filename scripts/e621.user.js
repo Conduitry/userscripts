@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2022.04.18.225111
+// @version 2022.04.18.225242
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -177,7 +177,7 @@ const augment_results = (container, posts, link_params) => {
 	}
 
 	// fetch avatars and thumbnails in comments blocked by global blacklist
-	while (document.querySelector('.post-thumb.placeholder:not([data-id="0"]), .dtext-post-id-link')) {
+	while (document.querySelector('#comments .post-thumb.placeholder:not([data-id="0"]), #comments .dtext-post-id-link')) {
 		await new Promise(res => setTimeout(res, 100));
 	}
 	for (const el of document.querySelectorAll('.post-thumbnail[data-id]:not([data-flags=deleted]):not([data-md5]) img')) {
