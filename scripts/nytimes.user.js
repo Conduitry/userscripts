@@ -4,18 +4,21 @@
 // @description A script to bypass the paywall, mostly.
 // @match https://www.nytimes.com/*
 // @icon https://www.nytimes.com/favicon.ico
-// @version 2022.09.23.035748
+// @version 2022.09.23.203556
 // ==/UserScript==
 
-(async () => {
+async function wait(selector, cb) {
 	for (let i = 0; i < 100; i++) {
-		const el = document.querySelector('#gateway-content');
+		await new Promise(res => setTimeout(res, 100));
+		const el = document.querySelector(selector);
 		if (el) {
-			el.remove();
-			document.querySelector('#app > div > div').className = '';
-			document.querySelector('#app > div > div > div:last-child').remove();
+			cb(el);
 			break;
 		}
-		await new Promise(res => setTimeout(res, 100));
 	}
-})();
+}
+
+wait('#app > div > div[class*="-"]', el => el.className = '');
+wait('#app > div > div > div[class*="-"]', el => el.className = '');
+wait('#gateway-content', el => el.remove());
+wait('#standalone-footer > div', el => el.remove());
