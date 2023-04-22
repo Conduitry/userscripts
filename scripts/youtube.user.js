@@ -4,7 +4,7 @@
 // @description A script to unset autoplay and display hidden video tags.
 // @match https://www.youtube.com/*
 // @icon https://www.youtube.com/favicon.ico
-// @version 2021.06.14.211919
+// @version 2023.04.22.120524
 // ==/UserScript==
 
 const disable_autoplay = async () => {
@@ -23,7 +23,7 @@ const disable_autoplay = async () => {
 
 const set_tags = async () => {
 	for (;;) {
-		const el = document.querySelector('h1.title.ytd-video-primary-info-renderer');
+		const el = document.querySelector('#title h1');
 		if (el) {
 			el.title = document.querySelector('meta[name=keywords]').content;
 			return;
