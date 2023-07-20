@@ -4,7 +4,7 @@
 // @description A script to bypass the paywall, mostly.
 // @match https://www.nytimes.com/*
 // @icon https://www.nytimes.com/favicon.ico
-// @version 2023.03.21.210726
+// @version 2023.07.20.214422
 // ==/UserScript==
 
 async function wait(selector, cb) {
@@ -24,3 +24,4 @@ wait('#gateway-content', el => el.remove());
 wait('#standalone-footer > div', el => el.remove());
 wait('button[data-testid=GDPR-reject]', el => el.click());
 wait('#vi_welcome_close', el => el.click());
+wait('#complianceOverlay button', el => el.click());
