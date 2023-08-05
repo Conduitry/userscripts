@@ -1,8 +1,9 @@
 #!/bin/sh
-git diff --cached --quiet -- scripts && exit 0
-git diff --name-only -- scripts | grep --fixed-strings "$(git diff --cached --name-only -- scripts)" && exit 1
+staged="$(git diff --cached --diff-filter=d --name-only -- scripts)"
+[ "$staged" ] || exit 0
+git diff --name-only -- scripts | grep --fixed-strings "$staged" && exit 1
 version="$(date --utc +%Y.%m.%d.%H%M%S)"
-git diff --cached --name-only -- scripts | while read -r file; do
+echo "$staged" | while read -r file; do
 	sed --in-place "s/@version .*/@version $version/" "$file"
 	git add "$file"
 done
