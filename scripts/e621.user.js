@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2022.09.10.020055
+// @version 2024.11.27.040913
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -101,7 +101,7 @@ const augment_results = (container, posts, link_params) => {
 	document.querySelector('.guest-warning').remove();
 
 	// disable automatic blacklist
-	localStorage.setItem('dab', '1');
+	localStorage.setItem('anonymous-blacklist', '[]');
 
 	const query = Object.fromEntries(new URLSearchParams(location.search));
 	let match;
