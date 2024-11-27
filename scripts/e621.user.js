@@ -4,7 +4,7 @@
 // @description A script to make browsing e621.net while not signed in more convenient, and to work around the global blacklist forced on anonymous users.
 // @match https://e621.net/*
 // @icon https://e621.net/favicon.ico
-// @version 2024.11.27.040913
+// @version 2024.11.27.041846
 // ==/UserScript==
 
 // wrapper around URLSearchParams to simplify creating search queries
@@ -83,7 +83,7 @@ const augment_results = (container, posts, link_params) => {
 			next = found;
 		} else {
 			const post = posts[i];
-			const el = dom(['article', { class: t`post-preview captioned ${post.relationships.parent_id && 'post-status-has-parent'} ${post.relationships.has_active_children && 'post-status-has-children'} ${post.flags.pending && 'post-status-pending'} ${post.flags.flagged && 'post-status-flagged'} post-rating-${{ s: 'safe', q: 'questionable', e: 'explicit' }[post.rating]}`, 'data-tags': post.tags.meta.includes('animated') ? 'animated' : null, 'data-file-ext': post.file.ext }, ['a', { href: `/posts/${post.id}${make_query(link_params)}` }, ['img', { src: get_preview_url(post), title: `Rating: ${post.rating}\nID: ${post.id}\nStatus: ${post.flags.deleted ? 'deleted' : post.flags.flagged ? 'flagged' : post.flags.pending ? 'pending' : 'active'}\nDate: ${post.created_at}\n\n${[...new Set(Object.values(post.tags).flat())].sort().join(' ')}` }]], ['div', { class: 'desc' }, ['div', { class: 'post-score' }, ['span', { class: `post-score-score score-${post.score.total > 0 ? 'positive' : post.score.total < 0 ? 'negative' : 'neutral'}` }, `${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}`], ['span', { class: 'post-score-faves' }, `♥${post.fav_count}`], ['span', { class: 'post-score-comments' }, `C${post.comment_count}`], ['span', { class: 'post-score-rating' }, post.rating.toUpperCase()], ['span', { class: 'post-score-extras' }, t`${post.relationships.parent_id && 'P'}${post.relationships.has_active_children && 'C'}${post.flags.pending && 'U'}${post.flags.flagged && 'F'}`]]]]);
+			const el = dom(['article', { class: t`thumbnail ${post.relationships.parent_id && 'has-parent'} ${post.relationships.has_active_children && 'has-children'} ${post.flags.pending && 'pending'} ${post.flags.flagged && 'flagged'} rating-${{ s: 'safe', q: 'questionable', e: 'explicit' }[post.rating]}`, 'data-rating': post.rating, 'data-tags': post.tags.meta.includes('animated') ? 'animated' : null, 'data-file-ext': post.file.ext }, ['a', { href: `/posts/${post.id}${make_query(link_params)}` }, ['img', { src: get_preview_url(post), title: `Rating: ${post.rating}\nID: ${post.id}\nStatus: ${post.flags.deleted ? 'deleted' : post.flags.flagged ? 'flagged' : post.flags.pending ? 'pending' : 'active'}\nDate: ${post.created_at}\n\n${[...new Set(Object.values(post.tags).flat())].sort().join(' ')}` }]], ['div', { class: 'desc' }, ['span', { class: `score score-${post.score.total > 0 ? 'positive' : post.score.total < 0 ? 'negative' : 'neutral'}` }, `${post.score.total > 0 ? '↑' : post.score.total < 0 ? '↓' : '↕'}${post.score.total}`], ['span', { class: 'favorites' }, `♥${post.fav_count}`], ['span', { class: 'comments' }, `C${post.comment_count}`], ['span', { class: 'rating' }, post.rating.toUpperCase()]]]);
 			container.insertBefore(el, next);
 			next = el;
 		}
@@ -137,7 +137,7 @@ const augment_results = (container, posts, link_params) => {
 		// on search results pages, re-add posts blocked by global blacklist
 		if (document.querySelector('.hidden-posts-notice')) {
 			const { posts } = await make_request('/posts.json', { tags: query.tags, page: query.page });
-			augment_results(document.querySelector('#posts-container'), posts, { q: query.tags });
+			augment_results(document.querySelector('.posts-container'), posts, { q: query.tags });
 		}
 
 	} else if (match = location.pathname.match(/^\/pools\/(?<pool_id>\d+)/)) {
@@ -148,13 +148,13 @@ const augment_results = (container, posts, link_params) => {
 		const all_blocked_posts = await find_all_posts(`pool:${pool_id} young -rating:s`);
 		const page = +query.page || 1;
 		const posts = post_ids.slice((page - 1) * 75, page * 75).map(post_id => all_blocked_posts.find(({ id }) => id === post_id) || { id: post_id });
-		augment_results(document.querySelector('#posts-container'), posts, { pool_id });
+		augment_results(document.querySelector('.posts-container'), posts, { pool_id });
 
 	} else if (/^\/popular\/?/.test(location.pathname)) {
 
 		// on popular posts pages, re-add posts blocked by global blacklist
 		const { posts } = await make_request('/popular.json', { date: query.date, scale: query.scale });
-		augment_results(document.querySelector('#posts-container'), posts);
+		augment_results(document.querySelector('.posts-container'), posts);
 
 	} else if (/^\/wiki_pages\/(\d+|show_or_new)/.test(location.pathname)) {
 
